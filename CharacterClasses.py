@@ -41,6 +41,12 @@ class BaseCreature:
                                                                self.charisma,
                                                                self.weapons)
 
+  def __repr__(self):
+    return 'Team: {}, Name: {}, HP: {}, AC: {}'.format(self.team,
+                                                       self.name,
+                                                       self.hp,
+                                                       self.ac)
+
   def give_melee_weapon(self, name, damage_die, damage_type, finesse, magic_bonus):
     weapon = Weapon(name, damage_die, damage_type, finesse, magic_bonus)
     self.weapons.append(weapon)

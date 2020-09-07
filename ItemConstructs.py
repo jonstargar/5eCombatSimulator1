@@ -17,6 +17,14 @@ class Weapon:
                                                                  self.magic_bonus,
                                                                  self.damage_die)
 
+  def __repr__(self):
+    if self.magic_bonus is 0:
+      return '{} with a {} damage die'.format(self.name, self.damage_die)
+    else:
+      return '{} with a +{} magic weapon with a {} damage die'.format(self.name,
+                                                                      self.magic_bonus,
+                                                                      self.damage_die)
+
 
 class RangedWeapon(Weapon):
 
