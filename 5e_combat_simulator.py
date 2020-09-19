@@ -109,43 +109,46 @@ def get_scores(teams):
 
 def get_players():
 
-  player_team = Team('players')
+  team_members = []
 
   geoff = generate_character_with_base_stats('Geoff', 120, 13, 18, 14, 14, 8, 13, 14, 2, False, 'bezerker')
   geoff.give_melee_weapon('greatclub', False, False, 1, [(10, 'bludgeoning')])
   logging.info('creature 1: ' + str(geoff))
-  player_team.team_members.append(geoff)
+  team_members.append(geoff)
 
   dave = generate_character_with_base_stats('Dave', 130, 13, 14, 13, 15, 9, 12, 13, 1, True, 'composed')
   dave.give_melee_weapon('longsword of scalding', False, True, 1, [(8, 'slashing'), (10, 'slashing')])
   logging.info('creature 2: ' + str(dave))
-  player_team.team_members.append(dave)
+  team_members.append(dave)
 
   bob = generate_character_with_base_stats('Bob', 160, 15, 14, 22, 14, 8, 13, 14, 1, False, 'strategic')
   bob.give_melee_weapon('greataxe of sundering', False, False, 2, [(12, 'slashing')])
   logging.info('creature 3: ' + str(bob))
-  player_team.team_members.append(bob)
+  team_members.append(bob)
 
-  john = generate_character_with_base_stats('John', 130, 13, 20, 22, 15, 9, 12, 13, 1, False, '')
+  john = generate_character_with_base_stats('John', 110, 13, 20, 22, 15, 9, 12, 13, 2, False, '')
   john.give_melee_weapon('greatsword', False, False, 0, [(6, 'slashing'), (6, 'slashing')])
   logging.info('creature 4: ' + str(john))
-  player_team.team_members.append(john)
+  team_members.append(john)
 
-  return player_team
+  return team_members
 
 
 def get_monsters():
-  monster_team = Team('monsters')
+  """."""
+  team_members = []
+
   giant1 = BaseMonster('Cloud Giant 1', 170, 29, 10, 22, 12, 16, 16, 2, False, 'berzerker', 14)
   giant1.give_melee_weapon('morningstar', 12, 8, [(8, 'piercing'), (8, 'piercing'), (8, 'piercing')])
   giant2 = BaseMonster('Cloud Giant 2', 170, 29, 10, 22, 12, 16, 16, 2, False, 'berzerker', 14)
   giant2.give_melee_weapon('morningstar', 12, 8, [(8, 'piercing'), (8, 'piercing'), (8, 'piercing')])
   # giant3 = BaseMonster('Cloud Giant 3', 200, 29, 10, 22, 12, 16, 16, 2, False, 'berzerker', 14)
   # giant3.give_melee_weapon('morningstar', 12, 8, [(8, 'piercing'), (8, 'piercing'), (8, 'piercing')])
-  monster_team.team_members.append(giant1)
-  monster_team.team_members.append(giant2)
+  team_members.append(giant1)
+  team_members.append(giant2)
   # monster_team.team_members.append(giant3)
-  return monster_team
+
+  return team_members
 
 
 def characters_from_multiple_teams_alive(teams):
@@ -171,60 +174,61 @@ def main():
                       filename='game_log.log', filemode='w+')
 
   # Get the teams
-  player_team = get_players()
-  monster_team = get_monsters()
+  player_team = Team('Players')
+  monster_team = Team('Monsters')
   teams = [player_team, monster_team]
 
-  # All the combatants to send for initiative oder
-  combatants = []
+  for i in range(100):
+    # reset the team members
+    player_team.team_members = get_players()
+    monster_team.team_members = get_monsters()
 
-  for player in player_team.team_members:
-    combatants.append(player)
-  for monster in monster_team.team_members:
-    combatants.append(monster)
-  initiative_order = get_initiative_order(combatants)
+    # All the combatants to send for initiative oder
+    combatants = []
 
-  round_number = 0
+    for player in player_team.team_members:
+      combatants.append(player)
+    for monster in monster_team.team_members:
+      combatants.append(monster)
+    initiative_order = get_initiative_order(combatants)
 
-  while characters_from_multiple_teams_alive(teams):
+    round_number = 0
 
-    print_initiative_order_and_character_state(initiative_order)
+    while characters_from_multiple_teams_alive(teams):
 
-    round_number += 1
-    print('\nRound {} FIGHT!\n'.format(round_number))
+      print_initiative_order_and_character_state(initiative_order)
 
-    for creature in initiative_order:
-      if creature.current_hp < 1:
-        logging.info('{} is down'.format(creature.name))
-        continue
-      potential_targets = get_potential_opponents(teams, creature)
+      round_number += 1
+      print('\nRound {} FIGHT!\n'.format(round_number))
 
-      if not potential_targets:
-        break
+      for creature in initiative_order:
+        if creature.current_hp < 1:
+          logging.info('{} is down'.format(creature.name))
+          continue
+        potential_targets = get_potential_opponents(teams, creature)
 
-      target = creature.pick_target(potential_targets)
-      print('{} targets {} {} times'.format(creature.name, target.name, creature.num_attacks))
-      for attack in range(creature.num_attacks):
-        text = creature.melee_attack(target)
-        print(text)
-        if target.current_hp < 1:
-          print('Putting {} on death saving throws!'.format(target.name))
+        if not potential_targets:
+          break
 
-    if not characters_from_multiple_teams_alive(teams):
-      # find the team with living members
-      for team in teams:
-        for creature in team.team_members:
-          if creature.current_hp > 0:
-            team.score += 1
+        target = creature.pick_target(potential_targets)
+        print('{} targets {} {} times'.format(creature.name, target.name, creature.num_attacks))
+        for attack in range(creature.num_attacks):
+          text = creature.melee_attack(target)
+          print(text)
+          if target.current_hp < 1:
+            print('Putting {} on death saving throws!'.format(target.name))
             break
-    '''
-    for team in teams:
-      if creature in team.team_members:
-        team.score += 1
-    player_team = get_players()
-    monster_team = get_monsters()
-    teams = [player_team, monster_team]
-    '''
+
+      if not characters_from_multiple_teams_alive(teams):
+        # find the team with living members
+        for team in teams:
+          for creature in team.team_members:
+            if creature.current_hp > 0:
+              team.score += 1
+              break
+      print('Player wins: {}'.format(str(player_team.score)))
+      print('Monster wins: {}'.format(str(monster_team.score)))
+
   print(get_scores(teams))
 
 
