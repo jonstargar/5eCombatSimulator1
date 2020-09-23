@@ -1,7 +1,3 @@
-class Game:
-  pass
-
-
 class Team:
 
   def __init__(self, name):

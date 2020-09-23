@@ -1,5 +1,5 @@
 from DamageConstructs import DamageDie
-from ItemConstructs import Weapon, RangedWeapon, MonsterWeapon
+from ItemConstructs import Weapon, RangedWeapon, MonsterWeapon, Armor
 from random import choice, randint
 import logging
 
@@ -7,7 +7,7 @@ import logging
 class BaseCreature:
 
   def __init__(self, name, max_hp, level, strength, dexterity, constitution, intelligence, wisdom,
-               charisma, attacks_per_action, bonus_action_attack, battle_style):
+               charisma, attacks_per_action, bonus_action_attack, ancillary_characteristics):
     # give the base stats
     self.name = name
     self.hp = max_hp
@@ -52,7 +52,10 @@ class BaseCreature:
     self.preferred_melee_weapon = None
 
     # define battle behaviour
-    self.battle_style = battle_style
+    try:
+      self.battle_style = ancillary_characteristics['battle_style']
+    except (KeyError, TypeError):
+      self.battle_style = ''
 
   def __str__(self):
     return 'Name: {}, HP: {}, AC: {}, Proficiency Bonus: {}, ' \
@@ -82,12 +85,24 @@ class BaseCreature:
     ranged_weapon = RangedWeapon(name, damage_die, damage_type, range, True, magic_bonus)
     self.weapons.append(ranged_weapon)
 
-  def give_light_armor(self, armor):
-    self.ac = armor.ac + self.get_bonus(self.dex)
-    logging.info(self.ac)
+  def give_light_armor(self, name, base_ac):
+    # To avoid lowering the AC set the minumum AC to 10 + dexterity modifier
+    if base_ac < 10:
+      base_ac = 10
+    armor = Armor(name, base_ac)
+    self.armour = armor
+    self.ac = armor.ac + self.get_bonus(self.dexterity)
+    logging.info('BaseCreature.give_light_armor: {} AC becomes {}'.format(self.name, str(self.ac)))
 
   def give_heavy_armor(self, armor):
     self.ac = armor.ac
+
+  def give_shield(self, shield):
+    self.shield = shield
+    self.ac = self.ac + 2 + shield.magic_bonus
+
+  def deal_damage(self, damage, type):
+    self.current_hp = self.current_hp - damage
 
   def get_bonus(self, stat_score):
     if stat_score <= 0:

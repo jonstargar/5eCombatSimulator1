@@ -59,10 +59,10 @@ class Weapon:
         logging.info('Versatile damage options: {}'.format(versatile_damage_die_choices))
         if two_handed:
           # if wearing a shield pick the lower damage die
-          damage_die.append(versatile_damage_die_choices[0])
+          damage_die.append(versatile_damage_die_choices[-1])
         else:
           # if not, take the higher damage die
-          damage_die.append(versatile_damage_die_choices[-1])
+          damage_die.append(versatile_damage_die_choices[0])
       except AttributeError:
         print('Weapon is marked as versatile but does not have appropriate damage types of "slashing", '
               '"bludgeoning", or "slashing"')
@@ -112,6 +112,13 @@ class Armor:
   def __init__(self, name, ac_level):
     self.name = name
     self.ac = ac_level
+
+
+class Shield:
+
+  def __init__(self, name, magic_bonus):
+    self.name = name
+    self.magic_bonus = magic_bonus
 
 
 class MonsterWeapon:

@@ -1,5 +1,4 @@
 from CharacterClasses import BaseCreature, BaseMonster
-from DamageConstructs import DamageDie
 from GameConstructs import Team
 from random import randint
 import logging
@@ -92,6 +91,8 @@ def get_initiative_order(list_of_combatants):
   initiative_order = []
 
   for character in list_of_combatants:
+    logging.info('Character dexterity: {}, Character dexterity bonus: {}'.format(str(character.dexterity),
+                 str(character.get_bonus(character.dexterity))))
     character.initiative = d20_with_modifier(character.get_bonus(character.dexterity))
     print('{} gets an initiative score of {}'.format(character.name, character.initiative))
     initiative_order.append(character)
@@ -111,22 +112,27 @@ def get_players():
 
   team_members = []
 
-  geoff = generate_character_with_base_stats('Geoff', 120, 13, 18, 14, 14, 8, 13, 14, 2, False, 'bezerker')
+  ancillary_characteristics = {'battle_style': 'berzerker',
+                               'skill_proficiencies': ['athletics', 'deception'],
+                               'resistances': []}
+
+  geoff = BaseCreature('Geoff', 120, 13, 18, 14, 14, 8, 13, 14, 2, False, ancillary_characteristics)
   geoff.give_melee_weapon('greatclub', False, False, 1, [(10, 'bludgeoning')])
+  geoff.give_light_armor('Studded Leather', 12)
   logging.info('creature 1: ' + str(geoff))
   team_members.append(geoff)
 
-  dave = generate_character_with_base_stats('Dave', 130, 13, 14, 13, 15, 9, 12, 13, 1, True, 'composed')
+  dave = BaseCreature('Dave', 130, 13, 14, 13, 15, 9, 12, 13, 1, True, ancillary_characteristics)
   dave.give_melee_weapon('longsword of scalding', False, True, 1, [(8, 'slashing'), (10, 'slashing')])
   logging.info('creature 2: ' + str(dave))
   team_members.append(dave)
 
-  bob = generate_character_with_base_stats('Bob', 160, 15, 14, 22, 14, 8, 13, 14, 1, False, 'strategic')
+  bob = BaseCreature('Bob', 160, 15, 14, 15, 14, 8, 13, 14, 1, False, ancillary_characteristics)
   bob.give_melee_weapon('greataxe of sundering', False, False, 2, [(12, 'slashing')])
   logging.info('creature 3: ' + str(bob))
   team_members.append(bob)
 
-  john = generate_character_with_base_stats('John', 110, 13, 20, 22, 15, 9, 12, 13, 2, False, '')
+  john = BaseCreature('John', 110, 13, 20, 10, 15, 9, 12, 13, 2, False, ancillary_characteristics)
   john.give_melee_weapon('greatsword', False, False, 0, [(6, 'slashing'), (6, 'slashing')])
   logging.info('creature 4: ' + str(john))
   team_members.append(john)
@@ -178,7 +184,7 @@ def main():
   monster_team = Team('Monsters')
   teams = [player_team, monster_team]
 
-  for i in range(100):
+  for i in range(3):
     # reset the team members
     player_team.team_members = get_players()
     monster_team.team_members = get_monsters()
