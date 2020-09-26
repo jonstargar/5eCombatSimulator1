@@ -5,7 +5,7 @@ import logging
 
 class Weapon:
 
-  def __init__(self, name, finesse, versatile, magic_bonus, damage_die):
+  def __init__(self, name, finesse, versatile, magic_bonus, damage_die, baseline_magic=False):
     self.name = name
     self.finesse = finesse
     self.versatile = versatile
@@ -17,6 +17,9 @@ class Weapon:
     for die in self.tmp_damage_dice_list:
       dice_size, damage_type = die
       self.damage_dice_list.append(DamageDie(dice_size, damage_type))
+    self.magical = baseline_magic
+    if magic_bonus > 0:
+      self.magical = True
 
   def __str__(self):
     tmp_string = ''
@@ -99,19 +102,28 @@ class Weapon:
 
 class RangedWeapon(Weapon):
 
-  def __init__(self, name, damage_die, damage_type, range, finesse, magic_bonus):
+  def __init__(self, name, magic_bonus, damage_die, range_short, range_long,  baseline_magic=False):
     self.name = name
-    self.damage_die = DamageDie(damage_die, damage_type)
-    self.finesse = finesse
     self.range = range
     self.magic_bonus = magic_bonus
+    self.range_short = range_short
+    self.range_long = range_long
+
+    self.tmp_damage_dice_list = []
+    self.damage_dice_list = []
+    for die in damage_die:
+      self.tmp_damage_dice_list.append(die)
+    for die in self.tmp_damage_dice_list:
+      dice_size, damage_type = die
+      self.damage_dice_list.append(DamageDie(dice_size, damage_type))
 
 
 class Armor:
 
-  def __init__(self, name, ac_level):
+  def __init__(self, name, ac_level, light=False):
     self.name = name
     self.ac = ac_level
+    self.light = light
 
 
 class Shield:
@@ -123,7 +135,7 @@ class Shield:
 
 class MonsterWeapon:
 
-  def __init__(self, name, to_hit_bonus, damage_bonus, damage_die):
+  def __init__(self, name, to_hit_bonus, damage_bonus, damage_die, baseline_magic=False):
     self.name = name
     self.to_hit_bonus = to_hit_bonus
     self.damage_bonus = damage_bonus
@@ -133,3 +145,5 @@ class MonsterWeapon:
       dice_size, damage_type = die
       new_die = DamageDie(dice_size, damage_type)
       self.damage.append(new_die)
+
+    self.magical = baseline_magic

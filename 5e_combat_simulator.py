@@ -1,26 +1,57 @@
-from CharacterClasses import BaseCreature, BaseMonster
+"""Simulates an encounter in D&D 5e combat and informs a DM how deadly the encounter is.
+
+A D&D 5e encounter pits heroes against monsters (or sometimes other heroes!). The encounter is
+designed by the Dungeon Master (DM). Maintaining a balance between the danger and survivability of
+an encounter is imperative in maintaining the suspense in a battle. Too easy and the players would
+win quickly and thus not feel any danger, too difficult and the players will die. It is such a balancing act!
+
+If only you could know in advance how many times out of a hundred the players would die.
+
+That is the purpose of this script. It will tell you if a battle was performed X times, how many times the
+players win and how many times they die. For now that is most useful for testig if the encounter will
+kill the players so you can tweak the opponents down a bit.
+
+This script utilizes the SRD 5.1 and Open gaming License (OGL) from Wizards of the Coast available here:
+https://media.wizards.com/2016/downloads/DND/SRD-OGL_V5.1.pdf
+and in it's distributed form only uses SRD 5.1 content (such as the Hill Troll monster as opponent) and rules (such as
+d20 system).
+
+Modifications to this code must be held within the SRD 5.1 and Open Gaming License above and is subject to the GNU
+AGPLv3
+
+"""
+
+from CharacterClasses import Monster, PlayerCharacter
 from GameConstructs import Team
 from random import randint
 import logging
 
 
 def d20_with_modifier(modifier=0):
+  """Rolls a d20 (20 sided dice) and adds the given modifier.
+
+  Args:
+      modifier (int): The number to add the random roll to.
+
+  Returns:
+      roll: random number between 1 and 20 + the modifier
+  """
   roll = randint(1, 20)
   logging.info('d20 roll is {} and the modifier is {}'.format(roll, modifier))
   roll = roll + modifier
   return roll
 
 
-def generate_character_with_base_stats(name, max_hp, level, strength, dexterity,
-                                       constitution, intelligence, wisdom, charisma, attacks_per_action,
-                                       bonus_action_attack, battle_style):
-  character = BaseCreature(name, max_hp, level, strength, dexterity, constitution, intelligence,
-                           wisdom, charisma, attacks_per_action, bonus_action_attack, battle_style)
-  return character
-
-
 def are_there_any_opponents(own_team, initiative_order):
-  """Returns True if there are any opponents still with health."""
+  """Returns True if there are any opponents still with health.
+
+  Args:
+      own_team (GameConstructs/Team): The team as reference to check if other teams have living combatants.
+      initiative_order (list): A list of BaseCreature or its subclass objects all taking place in the combat.
+
+  Returns:
+      bool: If any members of other teams in the combat are alive return True, if not return False
+  """
   for creature in initiative_order:
     if creature.team is own_team:
       continue
@@ -32,7 +63,15 @@ def are_there_any_opponents(own_team, initiative_order):
 
 
 def get_potential_opponents(teams, active_creature):
-  """Returns a list of the potential opponents for a character."""
+  """Returns a list of the potential opponents for a character.
+
+  Args:
+      teams (list): List of GameConstructs/Team participating in the combat.
+      active_creature (BaseCreature or subclass of): The character who's turn it is in the combat order.
+
+  Returns:
+      list: The list of BaseCreature or subclass thereof that are viable targets of the active_creature.
+  """
   potential_opponents = []
 
   for team in teams:
@@ -46,12 +85,22 @@ def get_potential_opponents(teams, active_creature):
 
 
 def print_initiative_order_and_character_state(combatants_with_initiative):
+  """Prints and returns the combat initiative order and current state of the combat.
+
+  Args:
+      combatants_with_initiative (list): List of the combatants in the combat with BaseCreature and its subclasses
+      with BaseCreature.initiative parameter.
+
+  Returns:
+      string: The state of the combat, including creature initiative order, HP etc.
+  """
   initiative_order_string = '\nInitiative Order and Creature States:'
   initiative_number = 0
   for combatant in combatants_with_initiative:
     initiative_number += 1
     if combatant.current_hp > 0:
-      initiative_order_string = initiative_order_string + '\n' + str(initiative_number) + '(' + str(combatant.initiative) + '): ' + repr(combatant)
+      initiative_order_string = initiative_order_string + '\n' + \
+                                str(initiative_number) + '(' + str(combatant.initiative) + '): ' + repr(combatant)
     else:
       text = '\n' + str(initiative_number) + '(' + str(combatant.initiative) + '): ' + repr(combatant)
       struck_text = ''
@@ -64,30 +113,16 @@ def print_initiative_order_and_character_state(combatants_with_initiative):
   return initiative_order_string
 
 
-def get_remaining_team_numbers(combatants):
-  """Returns a list of tuples containing the names of teams alongside the number of remaining members of the team."""
-  team_names = []
-  # Array of tuples containing the team name and their numbers
-  team_numbers = []
-  for combatant in combatants:
-    current_team_name = combatant.team_name
-    if current_team_name not in team_names:
-      team_names.append(combatant.team_name)
-
-  for team in team_names:
-    number_in_team = 0
-    for combatant in combatants:
-      if team is combatant.team_name:
-        number_in_team += 1
-    team_and_number = (team, number_in_team)
-    print(team_and_number)
-    team_numbers.append(team_and_number)
-
-  return team_numbers
-
-
 def get_initiative_order(list_of_combatants):
-  """take in a list of combatants, roll initiative for each, return an ordered list"""
+  """Take in a list of combatants, roll initiative for each, return an ordered list.
+
+  Args:
+      list_of_combatants (list): A list of BaseCreature or its subclasses that will participate in the combat.
+
+  Returns:
+      initiative_order: A list of the combatants ordered by the reverse of the newly created BaseCreature.initiative
+      parameter (so that the highest initiative is first and lowest is last).
+  """
   initiative_order = []
 
   for character in list_of_combatants:
@@ -102,6 +137,14 @@ def get_initiative_order(list_of_combatants):
 
 
 def get_scores(teams):
+  """Gets the text describing the current scores of which teams have won how many combats.
+
+  Args:
+      teams (list): List of GameConstructs/Teams objects.
+
+  Returns:
+      string: The text output of the current state of the multi-combat experience.
+  """
   score_text = 'And the scores: '
   for team in teams:
     score_text = score_text + '\n{}: {}'.format(team.name, team.score)
@@ -109,30 +152,36 @@ def get_scores(teams):
 
 
 def get_players():
+  """Creates a list of BaseCreature or its subclasses to fight on the player team.
+
+  Returns:
+      list of BaseCreature or its subclasses: A list of creatures to fight on the player team.
+  """
 
   team_members = []
 
   ancillary_characteristics = {'battle_style': 'berzerker',
                                'skill_proficiencies': ['athletics', 'deception'],
-                               'resistances': []}
+                               'resistances': ['fire']}
 
-  geoff = BaseCreature('Geoff', 120, 13, 18, 14, 14, 8, 13, 14, 2, False, ancillary_characteristics)
+  geoff = PlayerCharacter('Geoff', 140, 18, 14, 14, 8, 13, 14, 2, ancillary_characteristics, 13)
   geoff.give_melee_weapon('greatclub', False, False, 1, [(10, 'bludgeoning')])
   geoff.give_light_armor('Studded Leather', 12)
   logging.info('creature 1: ' + str(geoff))
   team_members.append(geoff)
 
-  dave = BaseCreature('Dave', 130, 13, 14, 13, 15, 9, 12, 13, 1, True, ancillary_characteristics)
+  dave = PlayerCharacter('Dave', 120, 14, 13, 15, 9, 12, 13, 1, ancillary_characteristics, 13, True)
   dave.give_melee_weapon('longsword of scalding', False, True, 1, [(8, 'slashing'), (10, 'slashing')])
+  dave.give_shield('Kit Shield', 1)
   logging.info('creature 2: ' + str(dave))
   team_members.append(dave)
 
-  bob = BaseCreature('Bob', 160, 15, 14, 15, 14, 8, 13, 14, 1, False, ancillary_characteristics)
+  bob = PlayerCharacter('Bob', 120, 14, 15, 14, 8, 13, 14, 1, ancillary_characteristics, 15)
   bob.give_melee_weapon('greataxe of sundering', False, False, 2, [(12, 'slashing')])
   logging.info('creature 3: ' + str(bob))
   team_members.append(bob)
 
-  john = BaseCreature('John', 110, 13, 20, 10, 15, 9, 12, 13, 2, False, ancillary_characteristics)
+  john = PlayerCharacter('John', 110, 20, 10, 15, 9, 12, 13, 2, ancillary_characteristics, 13)
   john.give_melee_weapon('greatsword', False, False, 0, [(6, 'slashing'), (6, 'slashing')])
   logging.info('creature 4: ' + str(john))
   team_members.append(john)
@@ -141,24 +190,35 @@ def get_players():
 
 
 def get_monsters():
-  """."""
+  """Creates a list of BaseCreature or its subclasses to fight on the monster team.
+  Returns:
+      list of BaseCreature or its subclasses: .
+  """
   team_members = []
 
-  giant1 = BaseMonster('Cloud Giant 1', 170, 29, 10, 22, 12, 16, 16, 2, False, 'berzerker', 14)
-  giant1.give_melee_weapon('morningstar', 12, 8, [(8, 'piercing'), (8, 'piercing'), (8, 'piercing')])
-  giant2 = BaseMonster('Cloud Giant 2', 170, 29, 10, 22, 12, 16, 16, 2, False, 'berzerker', 14)
-  giant2.give_melee_weapon('morningstar', 12, 8, [(8, 'piercing'), (8, 'piercing'), (8, 'piercing')])
-  # giant3 = BaseMonster('Cloud Giant 3', 200, 29, 10, 22, 12, 16, 16, 2, False, 'berzerker', 14)
-  # giant3.give_melee_weapon('morningstar', 12, 8, [(8, 'piercing'), (8, 'piercing'), (8, 'piercing')])
+  giant1 = Monster('Hill Giant 1', 105, 23, 9, 21, 9, 10, 12, 2, 'berzerker', 15)
+  giant1.give_melee_weapon('Greatclub', 8, 5, [(8, 'bludgeoning'), (8, 'bludgeoning'), (8, 'bludgeoning')])
+  giant2 = Monster('Hill Giant 2', 105, 23, 9, 21, 9, 10, 12, 2, 'berzerker', 15)
+  giant2.give_melee_weapon('Greatclub', 8, 5, [(8, 'bludgeoning'), (8, 'bludgeoning'), (8, 'bludgeoning')])
+  giant3 = Monster('Hill Giant 3', 70, 23, 9, 21, 9, 10, 12, 2, 'berzerker', 15)
+  giant3.give_melee_weapon('Greatclub', 8, 5, [(8, 'bludgeoning'), (8, 'bludgeoning'), (8, 'bludgeoning')])
   team_members.append(giant1)
   team_members.append(giant2)
-  # monster_team.team_members.append(giant3)
+  team_members.append(giant3)
 
   return team_members
 
 
 def characters_from_multiple_teams_alive(teams):
-  """Returns True if there are characters with > 0 hit points from multiple teams."""
+  """Returns True if there are characters with > 0 hit points from multiple teams.
+
+  Args:
+      teams (list of GameConstructs/Team): The list of teams to check for alive combatants.
+
+  Returns:
+      bool: If there are living creatures from multiple teams this will return True, meaning the battle continues.
+      Otherwise it returns False, allowing this iteration of the combat to end.
+  """
   teams_with_characters_alive = 0
   for team in teams:
     current_team_alive = False
@@ -184,7 +244,9 @@ def main():
   monster_team = Team('Monsters')
   teams = [player_team, monster_team]
 
-  for i in range(3):
+  combat_attempts = 10
+
+  for i in range(combat_attempts):
     # reset the team members
     player_team.team_members = get_players()
     monster_team.team_members = get_monsters()
